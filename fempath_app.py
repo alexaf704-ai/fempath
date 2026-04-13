@@ -1,4 +1,27 @@
-import streamlit as st
+<div class="action-item">
+  <div class="action-num">1</div>
+  <div>
+    <div class="action-title">Investiga fondos de capital de riesgo en México</div>
+    <div class="action-sub">Visita el sitio web de ALLVP y Dux Capital para conocer más sobre sus inversiones y enfoques. También puedes buscar artículos y entrevistas con sus socios fundadores para entender mejor su visión y estrategia. Anota 5 preguntas que te gustaría hacerles si tuvieras la oportunidad de reunirte con ellos.</div>
+  </div>
+  <span class="action-cta">Hacer hoy</span>
+</div>
+<div class="action-item">
+  <div class="action-num">2</div>
+  <div>
+    <div class="action-title">Asiste a un evento de emprendimiento en la Ciudad de México</div>
+    <div class="action-sub">Busca eventos en Meetup o Facebook relacionados con emprendimiento y startups. Un ejemplo es el evento mensual de Startup Grind en la Ciudad de México. Asegúrate de llevar tarjetas de presentación y estar preparada para hablar sobre tus ideas y proyectos.</div>
+  </div>
+  <span class="action-cta">Este fin de semana</span>
+</div>
+<div class="action-item">
+  <div class="action-num">3</div>
+  <div>
+    <div class="action-title">Crea un perfil en Linkedin y conecta con emprendedores y inversores</div>
+    <div class="action-sub">Crea un perfil completo y profesional en Linkedin, y busca conectarte con emprendedores y inversores en el ecosistema de startups en México. Un ejemplo es buscar a los socios fundadores de 500 Startups MX y enviarles una solicitud de conexión con un mensaje personalizado.</div>
+  </div>
+  <span class="action-cta">30 minutos</span>
+</div>import streamlit as st
 from groq import Groq
 import json
 import time
