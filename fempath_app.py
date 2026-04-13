@@ -11,7 +11,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ── DISEÑO CSS PERSONALIZADO ─────────────────────────────────
+# ── DISEÑO CSS PERSONALIZADO (Corregido) ─────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
@@ -69,3 +69,14 @@ html, body, [class*="css"] {
 .stat-lbl { font-size: 11px; color: #8fa3b8; margin-top: 6px; }
 
 .quiz-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(0,192,127,0.2);
+    border-radius: 20px;
+    padding: 36px;
+    margin-bottom: 24px;
+    position: relative;
+}
+.stButton > button {
+    background: #00C07F !important;
+    color: #0d1b2a !important;
+    font-weight: 800 !important;
