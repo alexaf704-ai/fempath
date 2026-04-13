@@ -409,8 +409,8 @@ def render_result(data):
     st.markdown("""
     <div style="background:linear-gradient(135deg,rgba(0,192,127,0.08),rgba(124,58,237,0.06));
                 border:1px solid rgba(0,192,127,0.3);border-radius:18px;padding:24px 24px 10px;margin-bottom:8px;">
-      <div style="font-size:15px;font-weight:800;margin-bottom:16px;">
-        🔥 Tus 3 acciones concretas <u>esta semana</u>
+      <div style="font-size:15px;font-weight:800;margin-bottom:16px;color:#ffffff;">
+        🔥 Tus 3 acciones concretas <span style="color:#00C07F;text-decoration:underline;">esta semana</span>
         <span style="font-size:12px;color:#8fa3b8;font-weight:400;margin-left:6px;">
           — generadas por Groq AI (Llama 3.3) para tu perfil exacto
         </span>
