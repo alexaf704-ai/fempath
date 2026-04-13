@@ -1,5 +1,5 @@
 import streamlit as st
-import google.generativeai as genai
+from groq import Groq
 import json
 import time
 
@@ -361,31 +361,29 @@ Responde con este JSON exacto (sin markdown, sin texto extra):
 
 
 # ── HELPERS ──────────────────────────────────────────────────
-def call_gemini(name, interest, goal, strength, timeline):
-    api_key = st.secrets.get("GEMINI_API_KEY", "")
+def call_groq(name, interest, goal, strength, timeline):
+    api_key = st.secrets.get("GROQ_API_KEY", "")
     if not api_key:
-        st.error("⚠️ Agrega tu GEMINI_API_KEY en los secrets de Streamlit. Sigue las instrucciones en DEPLOY_INSTRUCTIONS.md")
+        st.error("⚠️ Agrega tu GROQ_API_KEY en los secrets de Streamlit.")
         st.stop()
 
-    genai.configure(api_key=api_key)
-    model = genai.GenerativeModel(
-        model_name="gemini-2.0-flash",
-        system_instruction=SYSTEM_PROMPT
+    client = Groq(api_key=api_key)
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": build_prompt(name, interest, goal, strength, timeline)}
+        ],
+        temperature=0.7,
+        max_tokens=2000,
     )
-    response = model.generate_content(
-        build_prompt(name, interest, goal, strength, timeline),
-        generation_config=genai.types.GenerationConfig(
-            temperature=0.7,
-            max_output_tokens=2000,
-        )
-    )
-    raw = response.text.strip()
+    raw = response.choices[0].message.content.strip()
     # Strip markdown code fences if present
     if raw.startswith("```"):
         raw = raw.split("```")[1]
         if raw.startswith("json"):
             raw = raw[4:]
-        raw = raw.rstrip("`")
+        raw = raw.rstrip("`").strip()
     return json.loads(raw)
 
 
@@ -456,7 +454,7 @@ def render_result(data):
     st.markdown("""
     <div class="tools-row">
       <span style="font-size:11px;color:#8fa3b8;align-self:center">🤖 Powered by:</span>
-      <span class="tool-chip">Gemini AI (Google)</span>
+      <span class="tool-chip">Llama 3.3 (Groq)</span>
       <span class="tool-chip">ChatGPT (UX design)</span>
       <span class="tool-chip">Claude (arquitectura)</span>
       <span class="tool-chip">Gamma (pitch deck)</span>
@@ -587,10 +585,10 @@ def main():
         elif invalid:
             st.error("⚠️ Por favor responde todas las preguntas antes de continuar.")
         else:
-            with st.spinner("🤖 Gemini AI está analizando tu perfil y generando tu roadmap personalizado…"):
+            with st.spinner("🤖 Llama AI está analizando tu perfil y generando tu roadmap personalizado…"):
                 time.sleep(0.5)  # UX: let spinner render
                 try:
-                    result = call_gemini(
+                    result = call_groq(
                         name=name.strip(),
                         interest=interest,
                         goal=goal,
