@@ -468,7 +468,7 @@ def main():
         <div class="stat-lbl">Del capital VC en LATAM va a startups de mujeres</div>
       </div>
       <div class="stat-box">
-        <div class="stat-num">52<span style="font-size:18px">¢</span></div>
+        <div class="stat-num">52</div>
         <div class="stat-lbl">Centavos por cada peso que gana un hombre en inversión</div>
       </div>
       <div class="stat-box">
