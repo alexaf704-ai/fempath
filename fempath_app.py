@@ -509,7 +509,7 @@ def main():
         <div class="stat-lbl">Del capital VC en LATAM va a startups lideradas por mujeres</div>
       </div>
       <div class="stat-box">
-        <div class="stat-num">52¢</div>
+        <div class="stat-num">$0.52</div>
         <div class="stat-lbl">Por cada peso de un fundador, una fundadora recibe 52 centavos</div>
       </div>
       <div class="stat-box">
