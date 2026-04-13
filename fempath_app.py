@@ -272,7 +272,7 @@ html, body, [class*="css"] {
 """, unsafe_allow_html=True)
 
 
-# ── CLAUDE PROMPT ────────────────────────────────────────────
+# ── GROQ PROMPT ──────────────────────────────────────────────
 SYSTEM_PROMPT = """Eres el AI de FemPath — un co-piloto de carrera para mujeres en el ecosistema tech y venture capital de México.
 
 Tu rol es analizar el perfil de la usuaria y generar una respuesta ALTAMENTE PERSONALIZADA y CONCRETA.
@@ -296,66 +296,50 @@ PERFIL:
 Responde con este JSON exacto (sin markdown, sin texto extra):
 
 {{
-  "track_name": "nombre del track (ej: VC Analyst Track)",
-  "track_icon": "emoji representativo",
-  "title": "Tu camino: [título conciso]",
-  "description": "2-3 oraciones personalizadas explicando por qué este track es el correcto para ella basándote en su perfil específico",
-  "insight": "1 oración de insight real sobre su perfil — algo que no esperaba escuchar pero que es verdad",
+  "track_name": "nombre del track",
+  "track_icon": "emoji",
+  "title": "Tu camino: [título]",
+  "description": "2-3 oraciones personalizadas",
+  "insight": "1 oración de insight real",
   "week_actions": [
     {{
-      "title": "acción concreta y específica #1 para esta semana",
-      "detail": "instrucciones específicas paso a paso: dónde ir, qué buscar, qué decir. Menciona empresas/personas/recursos reales de México",
-      "cta": "etiqueta corta (ej: Hacer hoy, Es gratis, 30 minutos)"
-    }},
-    {{
-      "title": "acción concreta y específica #2",
-      "detail": "instrucciones específicas paso a paso con recursos reales",
+      "title": "acción específica #1",
+      "detail": "instrucciones específicas con recursos de México",
       "cta": "etiqueta corta"
     }},
     {{
-      "title": "acción concreta y específica #3",
-      "detail": "instrucciones específicas paso a paso con recursos reales",
+      "title": "acción #2",
+      "detail": "instrucciones específicas",
+      "cta": "etiqueta corta"
+    }},
+    {{
+      "title": "acción #3",
+      "detail": "instrucciones específicas",
       "cta": "etiqueta corta"
     }}
   ],
   "roadmap": [
     {{
       "phase": "0 – 3 meses",
-      "title": "título de la fase",
+      "title": "título",
       "actions": ["acción 1", "acción 2", "acción 3", "acción 4"]
     }},
     {{
       "phase": "3 – 12 meses",
-      "title": "título de la fase",
+      "title": "título",
       "actions": ["acción 1", "acción 2", "acción 3", "acción 4"]
     }},
     {{
       "phase": "1 – 3 años",
-      "title": "título de la fase",
+      "title": "título",
       "actions": ["acción 1", "acción 2", "acción 3", "acción 4"]
     }}
   ],
   "resources": [
-    {{
-      "title": "nombre del recurso real",
-      "why": "por qué es ideal para SU perfil específico (1 oración)",
-      "desc": "qué es y cómo acceder (1 oración)"
-    }},
-    {{
-      "title": "recurso 2",
-      "why": "razón personalizada",
-      "desc": "descripción"
-    }},
-    {{
-      "title": "recurso 3",
-      "why": "razón personalizada",
-      "desc": "descripción"
-    }},
-    {{
-      "title": "recurso 4",
-      "why": "razón personalizada",
-      "desc": "descripción"
-    }}
+    {{ "title": "recurso 1", "why": "razón", "desc": "descripción" }},
+    {{ "title": "recurso 2", "why": "razón", "desc": "descripción" }},
+    {{ "title": "recurso 3", "why": "razón", "desc": "descripción" }},
+    {{ "title": "recurso 4", "why": "razón", "desc": "descripción" }}
   ]
 }}"""
 
@@ -376,15 +360,9 @@ def call_groq(name, interest, goal, strength, timeline):
         ],
         temperature=0.7,
         max_tokens=2000,
+        response_format={"type": "json_object"}
     )
-    raw = response.choices[0].message.content.strip()
-    # Strip markdown code fences if present
-    if raw.startswith("```"):
-        raw = raw.split("```")[1]
-        if raw.startswith("json"):
-            raw = raw[4:]
-        raw = raw.rstrip("`").strip()
-    return json.loads(raw)
+    return json.loads(response.choices[0].message.content)
 
 
 def render_result(data):
@@ -421,7 +399,7 @@ def render_result(data):
     st.markdown(f"""
     <div class="week-box">
       <div class="week-title">🔥 Tus 3 acciones concretas <u>esta semana</u>
-        <span style="font-size:12px;color:#8fa3b8;font-weight:400"> — generadas por Groq AI para tu perfil exacto</span>
+        <span style="font-size:12px;color:#8fa3b8;font-weight:400"> — generadas por Groq AI</span>
       </div>
       {actions_html}
     </div>
@@ -440,7 +418,7 @@ def render_result(data):
         """, unsafe_allow_html=True)
 
     # Resources
-    st.markdown('<div class="sec-hdr">🤖 Recursos recomendados por Groq AI para tu perfil</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-hdr">🤖 Recursos recomendados por Groq AI</div>', unsafe_allow_html=True)
     for r in data['resources']:
         st.markdown(f"""
         <div class="res-card">
@@ -456,7 +434,6 @@ def render_result(data):
       <span style="font-size:11px;color:#8fa3b8;align-self:center">🤖 Powered by:</span>
       <span class="tool-chip">Llama 3.3 (Groq)</span>
       <span class="tool-chip">ChatGPT (UX design)</span>
-      <span class="tool-chip">Groq AI (Llama 3.3)</span>
       <span class="tool-chip">Claude (arquitectura)</span>
       <span class="tool-chip">Gamma (pitch deck)</span>
       <span class="tool-chip">Streamlit (deploy)</span>
@@ -466,39 +443,33 @@ def render_result(data):
     st.markdown('<br>', unsafe_allow_html=True)
     if st.button("↩ Explorar otro camino"):
         st.session_state.result = None
-        st.session_state.submitted = False
         st.rerun()
 
 
 # ── MAIN APP ─────────────────────────────────────────────────
 def main():
-    # Init state
     if "result" not in st.session_state:
         st.session_state.result = None
-    if "submitted" not in st.session_state:
-        st.session_state.submitted = False
 
-    # ── HEADER ──
+    # Header
     st.markdown("""
     <div class="hero-tag">🚀 MAD Fellows Challenge 2026 · EPIC Lab · ITAM · Track 02</div>
     <div class="hero-title">El <span class="hl">co-piloto de AI</span><br/>para tu carrera<br/>en Tech & VC</div>
     <div class="hero-sub">
-      FemPath no solo te muestra a dónde puedes llegar —
-      <strong style="color:rgba(255,255,255,.8)">te ayuda a llegar</strong> con rutas
-      personalizadas generadas por Groq AI (Llama 3.3) para el ecosistema emprendedor de México.
+      FemPath te ayuda a llegar con rutas personalizadas generadas por Groq AI para el ecosistema de México.
     </div>
     """, unsafe_allow_html=True)
 
-    # Stats
+    # Stats Row
     st.markdown("""
     <div class="stat-row">
       <div class="stat-box">
         <div class="stat-num">15%</div>
-        <div class="stat-lbl">Del capital VC en LATAM va a startups lideradas por mujeres</div>
+        <div class="stat-lbl">Del capital VC en LATAM va a startups de mujeres</div>
       </div>
       <div class="stat-box">
-        <div class="stat-num">52¢</div>
-        <div class="stat-lbl">Por cada peso de un fundador, una fundadora recibe 52 centavos</div>
+        <div class="stat-num">52<span style="font-size:18px">¢</span></div>
+        <div class="stat-lbl">Centavos por cada peso que gana un hombre en inversión</div>
       </div>
       <div class="stat-box">
         <div class="stat-num">10%</div>
@@ -507,110 +478,50 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-    # ── SHOW RESULT if already generated ──
     if st.session_state.result:
         render_result(st.session_state.result)
         return
 
-    # ── QUIZ ──
+    # Quiz card
     st.markdown("""
     <div class="quiz-card">
       <div class="quiz-label">🤖 AI Pathfinder — Tu ruta personalizada</div>
       <div class="ai-bubble">
-        Hola, soy el AI de FemPath. Cuéntame sobre ti y generaré
-        <strong style="color:#00C07F">tu roadmap de carrera personalizado</strong>
-        — con acciones concretas para esta semana.
+        Hola, soy el AI de FemPath. Generaré tu roadmap de carrera con acciones concretas para esta semana.
       </div>
     </div>
     """, unsafe_allow_html=True)
 
-    # Form
     with st.form("quiz_form"):
-        name = st.text_input(
-            "¿Cómo te llamas?",
-            placeholder="Ej: Ana, Valentina, Mariana…"
-        )
+        name = st.text_input("¿Cómo te llamas?", placeholder="Ej: Ana, Mariana…")
+        interest = st.selectbox("¿Área de interés?", ["Selecciona...", "Finanzas y VC", "Tecnología", "Impacto Social", "Estrategia"])
+        goal = st.selectbox("¿Tu meta en 5 años?", ["Selecciona...", "Fundadora", "Inversionista", "Líder en Corporativo", "Construir ecosistema"])
+        strength = st.selectbox("¿Mayor fortaleza?", ["Selecciona...", "Análisis Cuantitativo", "Networking", "Creatividad", "Ejecución"])
+        timeline = st.selectbox("¿Horizonte?", ["Selecciona...", "Ahora mismo", "Este año", "Al graduarme", "Experiencia previa"])
+        
+        submitted = st.form_submit_button("✨ Generar mi roadmap con Groq AI")
 
-        interest = st.selectbox(
-            "¿Cuál es tu principal área de interés profesional?",
-            options=[
-                "Selecciona una opción…",
-                "💰 Finanzas, inversión y capital de riesgo (VC, fintech, mercados)",
-                "💻 Tecnología, producto y desarrollo (apps, plataformas, startups tech)",
-                "🌱 Impacto social, sostenibilidad y propósito (impacto, ecosistema)",
-                "📊 Crecimiento, marketing y estrategia (GTM, branding, escalar negocios)",
-            ]
-        )
-
-        goal = st.selectbox(
-            "¿Qué rol quieres jugar en el ecosistema en los próximos 5 años?",
-            options=[
-                "Selecciona una opción…",
-                "🏗️ Crear mi propia startup (fundadora, CEO, co-fundadora)",
-                "🔭 Invertir y escalar startups ajenas (analista VC, associate, angel)",
-                "⚡ Transformar una industria desde adentro (corporate, fintech intrapreneur)",
-                "🧭 Construir el ecosistema (aceleradoras, programas, comunidades)",
-            ]
-        )
-
-        strength = st.selectbox(
-            "¿Cuál es tu mayor fortaleza hoy?",
-            options=[
-                "Selecciona una opción…",
-                "📈 Análisis cuantitativo y modelado financiero (Excel, valuaciones, datos)",
-                "🤝 Redes, relaciones y comunicación (conectar personas, presentar ideas)",
-                "🎨 Creatividad y pensamiento lateral (diseño, narrativa, innovación)",
-                "⚙️ Ejecución y resolución de problemas (operar, construir, iterar)",
-            ]
-        )
-
-        timeline = st.selectbox(
-            "¿Cuál es tu horizonte para tu primer gran movimiento?",
-            options=[
-                "Selecciona una opción…",
-                "🔥 Ahora mismo — busco oportunidades este semestre",
-                "📅 Este año — mientras termino la carrera (internship de verano)",
-                "🎓 Al graduarme — quiero llegar bien preparada",
-                "🌐 Con experiencia corporativa primero — banco o empresa grande antes",
-            ]
-        )
-
-        submitted = st.form_submit_button("✨  Generar mi roadmap con Groq AI")
-
-    # ── PROCESS ──
     if submitted:
-        # Validate
         invalid = any(v.startswith("Selecciona") for v in [interest, goal, strength, timeline])
         if not name.strip():
-            st.error("👋 Escribe tu nombre para continuar.")
+            st.error("👋 Escribe tu nombre.")
         elif invalid:
-            st.error("⚠️ Por favor responde todas las preguntas antes de continuar.")
+            st.error("⚠️ Responde todas las preguntas.")
         else:
-            with st.spinner("🤖 Llama AI está analizando tu perfil y generando tu roadmap personalizado…"):
-                time.sleep(0.5)  # UX: let spinner render
+            with st.spinner("🤖 Generando tu roadmap personalizado..."):
                 try:
-                    result = call_groq(
-                        name=name.strip(),
-                        interest=interest,
-                        goal=goal,
-                        strength=strength,
-                        timeline=timeline
-                    )
+                    result = call_groq(name.strip(), interest, goal, strength, timeline)
                     st.session_state.result = result
                     st.rerun()
-                except json.JSONDecodeError as e:
-                    st.error(f"Error parsing AI response. Intenta de nuevo.")
-                    st.exception(e)
                 except Exception as e:
-                    st.error(f"Error conectando con Groq AI: {str(e)}")
-                    st.exception(e)
+                    st.error(f"Error: {str(e)}")
 
     # Footer
     st.markdown("""
     <div style="text-align:center;margin-top:48px;padding-top:20px;
     border-top:1px solid rgba(255,255,255,0.06);font-size:12px;color:#8fa3b8;">
       FemPath · AI Career Co-Pilot · MAD Fellows Challenge 2026 · EPIC Lab ITAM<br/>
-      <span style="color:#00C07F">Powered by Gemini AI (Google)</span>
+      <span style="color:#00C07F">Powered by Groq AI (Llama 3.3)</span>
     </div>
     """, unsafe_allow_html=True)
 
