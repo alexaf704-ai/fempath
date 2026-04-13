@@ -1,254 +1,131 @@
 import streamlit as st
 from groq import Groq
 import json
-import time
 
-# ── 1. CONFIGURACIÓN DE LA PÁGINA ──────────────────────────────
-st.set_page_config(
-    page_title="FemPath — AI Career Co-Pilot",
-    page_icon="🚀",
-    layout="centered",
-    initial_sidebar_state="collapsed"
-)
+# ── 1. CONFIGURACIÓN Y ESTILO ────────────────────────────────
+st.set_page_config(page_title="FemPath — AI Co-Pilot", page_icon="🚀", layout="centered")
 
-# ── 2. ESTILOS CSS (Sincronizados y con colores forzados) ──────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap');
-
-/* Reset de colores para que nada sea invisible */
-html, body, [class*="css"], .stMarkdown {
-    font-family: 'Inter', sans-serif;
-    background-color: #0d1b2a !important;
-    color: #ffffff !important;
-}
-.stApp { background-color: #0d1b2a; }
-
-/* Forzar color blanco en todos los encabezados */
-h1, h2, h3, h4, p, span, label {
-    color: #ffffff !important;
-}
-
-#MainMenu, footer, header { visibility: hidden; }
-
-/* Hero Section */
-.hero-tag {
-    display: inline-block;
-    background: rgba(0,192,127,0.1);
-    border: 1px solid rgba(0,192,127,0.3);
-    color: #00C07F !important;
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 700;
-    margin-bottom: 20px;
-}
-.hero-title {
-    font-size: clamp(32px, 5vw, 56px);
-    font-weight: 900;
-    line-height: 1.1;
-    margin-bottom: 14px;
-    color: #ffffff !important;
-}
-.hero-title .hl { color: #00C07F !important; }
-
-/* Stats Row */
-.stat-row {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 14px;
-    margin: 40px 0;
-}
-.stat-box {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 14px;
-    padding: 20px;
-    text-align: center;
-}
-.stat-num { font-size: 32px; font-weight: 900; color: #00C07F !important; }
-.stat-lbl { font-size: 11px; color: #8fa3b8 !important; margin-top: 6px; }
-
-/* Problem Cards (Del HTML) */
-.problem-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin: 40px 0;
-}
-.pcard {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-radius: 16px;
-    padding: 20px;
-}
-.pcard-icon { font-size: 24px; margin-bottom: 10px; }
-.pcard h3 { font-size: 15px; font-weight: 700; margin-bottom: 8px; color: #ffffff !important; }
-.pcard p { font-size: 12px; color: #8fa3b8 !important; line-height: 1.5; }
-
-/* Community Section */
-.warm-card {
-    background: linear-gradient(135deg, rgba(124,58,237,0.1), rgba(0,192,127,0.08));
-    border: 1px solid rgba(124,58,237,0.25);
-    border-radius: 20px;
-    padding: 30px;
-    margin-top: 50px;
-    text-align: center;
-}
-
-/* Form & UI Elements */
-.stButton > button {
-    background: #00C07F !important;
-    color: #0d1b2a !important;
-    font-weight: 800 !important;
-    border-radius: 12px !important;
-    width: 100% !important;
-    border: none !important;
-    padding: 12px !important;
-}
-
-.ai-bubble {
-    background: rgba(0,192,127,0.07);
-    border: 1px solid rgba(0,192,127,0.18);
-    border-radius: 12px;
-    padding: 12px 16px;
-    font-size: 13px;
-    color: #ffffff !important;
-    margin-bottom: 24px;
-}
-
-/* Resultados */
-.track-pill {
-    display: inline-block;
-    background: rgba(0,192,127,0.12);
-    border: 2px solid #00C07F;
-    color: #00C07F !important;
-    padding: 5px 16px;
-    border-radius: 20px;
-    text-transform: uppercase;
-    font-size: 12px;
-    font-weight: 800;
-    margin-bottom: 10px;
-}
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+    html, body, [class*="css"], .stApp {
+        background-color: #0d1b2a !important;
+        font-family: 'Inter', sans-serif;
+        color: #ffffff !important;
+    }
+    .hero-tag {
+        background: rgba(0,192,127,0.1); border: 1px solid rgba(0,192,127,0.3);
+        color: #00C07F !important; padding: 6px 16px; border-radius: 20px;
+        font-size: 13px; font-weight: 700; display: inline-block; margin-bottom: 20px;
+    }
+    .hl { color: #00C07F !important; font-weight: 900; }
+    .ai-bubble {
+        background: rgba(0,192,127,0.07); border: 1px solid rgba(0,192,127,0.18);
+        border-radius: 12px; padding: 20px; margin: 20px 0; border-left: 5px solid #00C07F;
+    }
+    .stButton > button {
+        background: #00C07F !important; color: #0d1b2a !important;
+        font-weight: 800 !important; border-radius: 12px !important;
+        width: 100% !important; border: none !important; height: 50px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ── 3. LÓGICA DE IA (GROQ) ──────────────────────────────────────
-def call_groq(name, interest, goal, strength, timeline):
-    api_key = st.secrets.get("GROQ_API_KEY", "")
-    if not api_key:
-        st.error("⚠️ Falta GROQ_API_KEY en los Secrets.")
-        st.stop()
+# ── 2. LLAMADA A LA IA ───────────────────────────────────────
+def call_fempath_ai(name, interest, goal, strength, timeline):
+    try:
+        api_key = st.secrets["GROQ_API_KEY"]
+    except:
+        st.error("🔑 Error: No configuraste 'GROQ_API_KEY' en los Secrets.")
+        return None
+
     client = Groq(api_key=api_key)
     
-    prompt = f"Genera un roadmap JSON para {name}. Interés: {interest}, Meta: {goal}, Fortaleza: {strength}, Tiempo: {timeline}."
+    # El prompt ahora es súper estricto con los nombres de las llaves
+    prompt = f"""
+    Eres la IA de FemPath para el EPIC Lab ITAM. Crea un plan para {name}.
+    Interés: {interest}, Meta: {goal}, Fortaleza: {strength}, Tiempo: {timeline}.
     
-    response = client.chat.completions.create(
+    RESPONDE EXCLUSIVAMENTE CON ESTE JSON:
+    {{
+      "res_titulo": "Título del Plan",
+      "res_emoji": "🚀",
+      "res_insight": "Breve consejo potente",
+      "res_acciones": [
+        {{"paso": "Paso 1", "detalle": "Qué hacer específicamente"}},
+        {{"paso": "Paso 2", "detalle": "Qué hacer específicamente"}},
+        {{"paso": "Paso 3", "detalle": "Qué hacer específicamente"}}
+      ],
+      "res_roadmap": ["Fase 1", "Fase 2", "Fase 3"]
+    }}
+    """
+
+    completion = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
-        messages=[
-            {"role": "system", "content": "Eres la IA de FemPath. Responde solo con JSON válido."},
-            {"role": "user", "content": prompt}
-        ],
+        messages=[{"role": "user", "content": prompt}],
         response_format={"type": "json_object"}
     )
-    return json.loads(response.choices[0].message.content)
+    return json.loads(completion.choices[0].message.content)
 
-# ── 4. ESTRUCTURA DE LA APLICACIÓN ──────────────────────────────
-def main():
-    if "result" not in st.session_state: st.session_state.result = None
+# ── 3. LÓGICA DE NAVEGACIÓN ──────────────────────────────────
+if "resultado_ai" not in st.session_state:
+    st.session_state.resultado_ai = None
 
-    # HEADER (Restaurado de fempath.html)
-    st.markdown('<div class="hero-tag">🚀 MAD Fellows Challenge 2026 · EPIC Lab ITAM</div>', unsafe_allow_html=True)
-    st.markdown('<div class="hero-title">El <span class="hl">co-piloto de AI</span> para tu carrera en Tech & VC</div>', unsafe_allow_html=True)
-    st.markdown('<p style="color:#8fa3b8; font-size:17px; margin-bottom:40px;">FemPath te ayuda a navegar el ecosistema emprendedor con rutas personalizadas generadas por IA.</p>', unsafe_allow_html=True)
+st.markdown('<div class="hero-tag">🚀 MAD Fellows 2026 · EPIC Lab ITAM</div>', unsafe_allow_html=True)
+st.markdown('<h1>FemPath: Tu <span class="hl">Plan de Acción</span></h1>', unsafe_allow_html=True)
 
-    # STATS ROW
-    st.markdown("""
-    <div class="stat-row">
-      <div class="stat-box"><div class="stat-num">15%</div><div class="stat-lbl">Capital VC a startups de mujeres</div></div>
-      <div class="stat-box"><div class="stat-num">52¢</div><div class="stat-lbl">Por cada peso que recibe un hombre</div></div>
-      <div class="stat-box"><div class="stat-num">10%</div><div class="stat-lbl">Deal flow femenino en México</div></div>
+# VISTA DE RESULTADOS
+if st.session_state.resultado_ai:
+    res = st.session_state.resultado_ai
+    st.balloons()
+    
+    # Aquí usamos .get('llave', 'texto_si_falla') para que NUNCA salga vacío
+    titulo = res.get('res_titulo', 'Tu Ruta al Éxito')
+    emoji = res.get('res_emoji', '✨')
+    
+    st.markdown(f"## {emoji} {titulo}")
+    
+    st.markdown(f"""
+    <div class="ai-bubble">
+        <h4 style='margin-top:0; color:#00C07F;'>🤖 Insight de la IA para {nombre if 'nombre' in locals() else 'ti'}</h4>
+        <p style='margin-bottom:0;'>{res.get('res_insight', 'El primer paso es el más importante. ¡Empieza hoy!')}</p>
     </div>
     """, unsafe_allow_html=True)
 
-    if st.session_state.result:
-        # RESULTADOS
-        res = st.session_state.result
-        st.balloons()
-        st.markdown(f'<div class="track-pill">{res.get("track_name", "Tu Ruta")}</div>', unsafe_allow_html=True)
-        st.markdown(f"## {res.get('track_icon', '🚀')} {res.get('title', 'Plan de Acción')}")
-        
-        st.markdown(f'<div class="ai-bubble">🤖 <strong>Insight:</strong> {res.get("insight", "Listo para empezar.")}</div>', unsafe_allow_html=True)
-        
-        st.subheader("🔥 Acciones para esta semana")
-        for act in res.get('week_actions', []):
-            with st.expander(f"📌 {act['title']}"):
-                st.write(act['detail'])
-                st.caption(f"Acción: {act['cta']}")
-        
-        if st.button("↩ Crear otra ruta"):
-            st.session_state.result = None
-            st.rerun()
-    else:
-        # SECCIÓN EL PROBLEMA (Forzando visibilidad)
-        st.markdown('<div style="text-transform:uppercase; color:#00C07F; font-size:11px; font-weight:700; letter-spacing:2px; margin-bottom:10px;">El Problema</div>', unsafe_allow_html=True)
-        st.markdown('<h2 style="color:white !important;">¿Por qué hay tan pocas mujeres en Tech?</h2>', unsafe_allow_html=True)
-        
-        st.markdown("""
-        <div class="problem-grid">
-          <div class="pcard">
-            <div class="pcard-icon">🧠</div>
-            <h3>Confidence Gap</h3>
-            <p>Las mujeres suelen aplicar a roles solo si cumplen el 100% de los requisitos.</p>
-          </div>
-          <div class="pcard">
-            <div class="pcard-icon">🤝</div>
-            <h3>Network Access</h3>
-            <p>Falta de acceso a redes de contacto y mentoras en etapas tempranas.</p>
-          </div>
-          <div class="pcard">
-            <div class="pcard-icon">💰</div>
-            <h3>Capital Bias</h3>
-            <p>Sesgos inconscientes en la asignación de capital semilla y venture capital.</p>
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
+    st.subheader("🔥 Acciones para esta semana")
+    # Buscamos la lista de acciones. Si no existe, usamos una vacía [].
+    for item in res.get('res_acciones', []):
+        with st.expander(f"📍 {item.get('paso', 'Acción Recomendada')}"):
+            st.write(item.get('detalle', 'La IA está procesando los detalles, pero el enfoque es tu crecimiento en el sector.'))
 
-        # QUIZ
-        st.markdown('<div style="background: rgba(255,255,255,0.03); padding: 30px; border-radius: 20px; border: 1px solid rgba(0,192,127,0.2);">', unsafe_allow_html=True)
-        with st.form("quiz_form"):
-            st.markdown('<h3 style="margin-top:0;">🤖 AI Pathfinder</h3>', unsafe_allow_html=True)
-            name = st.text_input("¿Cómo te llamas?")
-            interest = st.selectbox("Área de interés", ["Venture Capital", "Fintech", "Sostenibilidad", "Estrategia"])
-            goal = st.selectbox("Tu meta a 5 años", ["Fundadora", "Inversionista", "Líder en Tech"])
-            strength = st.selectbox("Tu mayor fortaleza", ["Análisis de Datos", "Networking", "Creatividad"])
-            timeline = st.selectbox("¿Cuándo quieres empezar?", ["Ahora mismo", "Al graduarme"])
-            
-            submit = st.form_submit_button("✨ Generar Roadmap con Groq AI")
-            if submit:
-                if name:
-                    with st.spinner("Analizando perfil..."):
-                        try:
-                            st.session_state.result = call_groq(name, interest, goal, strength, timeline)
-                            st.rerun()
-                        except Exception as e: st.error(f"Error: {e}")
-                else: st.warning("Escribe tu nombre.")
-        st.markdown('</div>', unsafe_allow_html=True)
+    st.subheader("🗺️ Roadmap Estratégico")
+    for step in res.get('res_roadmap', []):
+        st.write(f"✅ {step}")
 
-    # COMMUNITY SECTION
-    st.markdown("""
-    <div class="warm-card">
-      <div style="font-size:11px; font-weight:700; color:#00C07F; margin-bottom:10px; text-transform:uppercase;">Community & Network</div>
-      <h2 style="color:white !important; margin-bottom:15px;">No camines sola</h2>
-      <p style="color:#8fa3b8; margin-bottom:20px;">Únete a la comunidad de mujeres del EPIC Lab y conecta con mentoras que ya han recorrido el camino.</p>
-      <div style="text-align:center;">
-        <span style="background:#00C07F; color:#0d1b2a; padding:10px 25px; border-radius:8px; font-weight:800; cursor:pointer;">Próximamente</span>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    if st.button("↩️ Crear nuevo perfil"):
+        st.session_state.resultado_ai = None
+        st.rerun()
 
-    # FOOTER
-    st.markdown('<div style="text-align:center; margin-top:50px; color:#8fa3b8; font-size:12px;">FemPath · MAD Fellows 2026 · EPIC Lab ITAM</div>', unsafe_allow_html=True)
+# VISTA DE FORMULARIO
+else:
+    with st.form("main_form"):
+        st.markdown("### 🤖 Genera tu ruta personalizada")
+        nombre = st.text_input("¿Cómo te llamas?")
+        area = st.selectbox("Área", ["Venture Capital", "Software & IA", "Fintech"])
+        meta = st.selectbox("Meta", ["Fundadora", "Inversionista", "Directiva"])
+        fuerza = st.selectbox("Habilidad", ["Análisis", "Networking", "Creatividad"])
+        tiempo = st.selectbox("Cuándo", ["Inmediatamente", "Al graduarme"])
+        
+        btn = st.form_submit_button("✨ GENERAR MI PLAN")
 
-if __name__ == "__main__":
-    main()
+        if btn:
+            if not nombre:
+                st.warning("Escribe tu nombre.")
+            else:
+                with st.spinner("🚀 Consultando a Llama 3..."):
+                    resultado = call_fempath_ai(nombre, area, meta, fuerza, tiempo)
+                    if resultado:
+                        st.session_state.resultado_ai = resultado
+                        st.rerun()
+
+st.markdown('<div style="text-align:center; margin-top:50px; color:#8fa3b8; font-size:12px;">FemPath · MAD Fellows Challenge 2026</div>', unsafe_allow_html=True)
